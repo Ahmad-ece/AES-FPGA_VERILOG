@@ -14,3 +14,9 @@ made some modification in key_expansion code.
 a lot of thing were tough to incorporate in a loop earlier..
 so a more compact code is written now. algorrithm and steps are exactly same as previous uploaded code . only some things are written in a "for" loop
 for a better understanding read both the codes .
+
+
+update 01-03-2022  6:00 pm
+mix_col and shift_rows are also done using tasks 
+mix_col operates on a word (32 bits) while shift_rows operate ona whole state (128 bits)
+both are verified using a testbench
