@@ -20,3 +20,11 @@ update 01-03-2022  6:00 pm
 mix_col and shift_rows are also done using tasks 
 mix_col operates on a word (32 bits) while shift_rows operate ona whole state (128 bits)
 both are verified using a testbench
+
+
+update 01-03-222 09:30 pm
+encryption is done ..
+tested with the data and key given in official document
+everything is in verilog and implemented using tasks
+although the code may seem very jagged and messy , i will clean and include packages (ike vhdl) for task definition later.
+the file "encryptio.v" runs well on RTL simulation and you can see the key_expansion output in it too
