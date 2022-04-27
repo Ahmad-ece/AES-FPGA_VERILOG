@@ -28,3 +28,7 @@ tested with the data and key given in official document
 everything is in verilog and implemented using tasks
 although the code may seem very jagged and messy , i will clean and include packages (ike vhdl) for task definition later.
 the file "encryptio.v" runs well on RTL simulation and you can see the key_expansion output in it too
+
+
+UPDATE 27.04.2022
+decr file made by tanmay and uplooaded by naef
