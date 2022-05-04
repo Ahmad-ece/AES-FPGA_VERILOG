@@ -32,3 +32,8 @@ the file "encryptio.v" runs well on RTL simulation and you can see the key_expan
 
 UPDATE 27.04.2022
 decr file made by tanmay and uplooaded by naef
+
+
+
+update 04/05.2022
+files uploaded on this date are ready for encryption and decryption of a single 16B block along with the testbench
