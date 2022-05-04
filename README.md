@@ -37,3 +37,4 @@ decr file made by tanmay and uplooaded by naef
 
 update 04/05.2022
 files uploaded on this date are ready for encryption and decryption of a single 16B block along with the testbench
+just need to change path of memory files in main code
