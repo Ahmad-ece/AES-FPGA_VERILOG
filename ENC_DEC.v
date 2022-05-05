@@ -18,15 +18,15 @@ module key_expansion_encr (clk, key_in, key_schedule, start_encrypting);
 	reg [0:31] temp3;
 	reg [7:0] temp3_word [0:3];
 	reg [7:0] sbox [0:255];
-	reg [0:31] rcon [1:10];
+	reg [0:31] rcon [0:9];
 	integer row, col;
 	
 	integer i;
 	integer j;
 	
 	initial begin
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/sbox.mem",sbox);
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/rcon.mem", rcon);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/sbox.mem",sbox);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/rcon.mem", rcon);
 	end
 	
 	task automatic rot_word;   //////////////opeartes on a flattened word
@@ -111,7 +111,7 @@ module key_expansion_encr (clk, key_in, key_schedule, start_encrypting);
 		input [3:0] key_schedule_index ;
 		output [0:31] word_out;
 		begin
-			word_out = rcon[key_schedule_index];
+			word_out = rcon[key_schedule_index-1];
 		end
 	endtask
 
@@ -158,23 +158,25 @@ module key_expansion_encr (clk, key_in, key_schedule, start_encrypting);
 				end
 				start_encrypting = 1;
 			end
-		index = index+1;
+			else begin
+				start_encrypting = 0;
+				index = index+1;
+			end
 		
 	end
 	endmodule
 	
 
-module encryption(clk, start_encrypting, key_in, data_in, cipher_out, encryption_done);
+module encryption(clk, start_encrypting, key_schedule, data_in, cipher_out, encryption_done);
 input clk;
+input [0:1407] key_schedule;
 input start_encrypting;
-input [0:127] key_in;
 input [0:127] data_in;
 output reg [0:127] cipher_out;
 output reg encryption_done;
 reg [0:127] temp1, temp2, temp3, temp4, temp5;
 reg [7:0] sbox [0:255];
-reg [0:31] rcon [1:10];
-wire [0:1407] key_schedule;
+reg [0:31] rcon [0:9];
 integer round = 0;
 	
 	
@@ -260,7 +262,7 @@ integer round = 0;
 		input [3:0] key_schedule_index ;
 		output [0:31] word_out;
 		begin
-			word_out = rcon[key_schedule_index];
+			word_out = rcon[key_schedule_index-1];
 		end
 	endtask
 	
@@ -296,7 +298,7 @@ integer round = 0;
 			end
 		end
 		
-	
+//		
 //		for(col=0;col<4;col=col+1) begin
 //			for (row=0;row<4;row=row+1) 
 //				$display ("%d   %d   %h ",col, row, words_in[row][col] );
@@ -353,7 +355,7 @@ integer round = 0;
 							((bytes_in[3]  << 1) ^ (bytes_in[3][7] ? 8'h1b : 8'h00));
 		
 		
-		for(col=0;col<16;col=col+1) begin
+		for(col=0;col<4;col=col+1) begin
 			out[8*col +: 8] = bytes_out[col];
 		end
 	end	
@@ -389,7 +391,7 @@ integer round = 0;
 	endtask
 		
 		
-	key_expansion_encr k1 (clk, key_in, key_schedule, start_encrypting);
+	//key_expansion_encr k1 (clk, key_in, key_schedule, start_encrypting);
 	
 	always@(posedge clk) begin
 		if(start_encrypting == 1 && encryption_done == 0) begin
@@ -417,8 +419,8 @@ integer round = 0;
 	
 	initial begin
 		encryption_done = 0;
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/sbox.mem",sbox);
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/rcon.mem", rcon);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/sbox.mem",sbox);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/rcon.mem", rcon);
 	end
 endmodule
 
@@ -429,214 +431,215 @@ endmodule
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    
-	module key_expansion_decr (clk, key_in, key_schedule, start_decrypting);
-	input clk;
-	input [0:127] key_in ;
-	output reg [0:1407] key_schedule ;
-	output reg start_decrypting;
-	integer index = 0;
-	reg [7:0] key_in_reg [0:3][0:3];
-	reg [7:0] key_in_reg_word_0 [0:3]; reg [7:0] key_in_reg_word_1 [0:3]; reg [7:0] key_in_reg_word_2 [0:3]; reg [7:0] key_in_reg_word_3 [0:3];
-	reg  [7:0] key_schedule_reg [0:3][0:43];
-	reg [0:31] temp_rot_word;
-	reg [0:31] temp_subword;
-	reg [0:31] temp_rcon;
-	reg [0:31] temp_after_xor_with_rcon;
-	reg [0:31] temp1;
-	reg [0:7] temp1_word [0:3];
-	reg [0:31] temp2;
-	reg [0:7] temp2_word [0:3];
-	reg [0:31] temp3;
-	reg [7:0] temp3_word [0:3];
-	reg [7:0] inv_sbox [0:255];
-	reg [7:0] sbox [0:255];
-	reg [0:31] rcon [1:10];
-	integer row, col;
-	
-	integer i;
-	integer j;
-	
-	initial begin
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/inv_sbox.mem",inv_sbox);
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/rcon.mem", rcon);
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/sbox.mem", sbox);
-	end
-	
-	task automatic rot_word;   //////////////opeartes on a flattened word
-	input [0:31] flattened_word_in ;
-	output [0:31] flattened_word_out;
-	reg [7:0] compact_word_in_reg[0:3] ;
-	reg [7:0] compact_word_out_reg[0:3] ;
-	integer row;
-	
-	
-	begin
-		for(row=0;row<4;row=row+1) begin
-			compact_word_in_reg[row] = flattened_word_in[8*row +: 8];
-		end
-			
-		for (row = 0; row < 4; row = row+1) begin
-			compact_word_out_reg [row] = compact_word_in_reg [(row + 1)%4];
-		end
-	
-		for(row=0;row<4;row=row+1) begin
-			flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
-		end
-			end
-	
-	endtask
-	
-	task automatic sub_word;   ////////////////operates on a flattened word
-		input [0:31] flattened_word_in ;
-		output [0:31] flattened_word_out;
-		reg [7:0] compact_word_in_reg[0:3] ;
-		reg [7:0] compact_word_out_reg[0:3] ;
-		integer row;
-		
-		begin
-		
-		
-			for(row=0;row<4;row=row+1) begin
-				compact_word_in_reg[row] = flattened_word_in[8*row +: 8];
-			end
-			
-			for (row = 0; row < 4; row = row+1) begin
-				compact_word_out_reg [row] = inv_sbox[16*compact_word_in_reg[row][7:4]+compact_word_in_reg[row][3:0]];
-			end	
-			
-			for(row=0;row<4;row=row+1) begin
-				flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
-			end
-		
-		end
-		endtask
-		
-		task automatic inv_sub_word;   ////////////////operates on a flattened word
-		input [0:31] flattened_word_in ;
-		output [0:31] flattened_word_out;
-		reg [7:0] compact_word_in_reg[0:3] ;
-		reg [7:0] compact_word_out_reg[0:3] ;
-		integer row;
-		
-		begin
-		
-		
-			for(row=0;row<4;row=row+1) begin
-				compact_word_in_reg[row] = flattened_word_in[8*row +: 8];
-			end
-			
-			for (row = 0; row < 4; row = row+1) begin
-				compact_word_out_reg [row] = sbox[16*compact_word_in_reg[row][7:4]+compact_word_in_reg[row][3:0]];
-			end	
-			
-			for(row=0;row<4;row=row+1) begin
-				flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
-			end
-		
-		end
-		endtask
-		
-		task automatic xor_two_words;  ////////////////operates on a flattened word
-		input [0:31] flattened_word_in1 ;
-		input [0:31] flattened_word_in2 ;
-		output [0:31] flattened_word_out ;
-		reg [7:0] compact_word_in1_reg [0:3] ;
-		reg [7:0] compact_word_in2_reg [0:3] ;
-		reg [7:0] compact_word_out_reg [0:3];
-		integer row;
-		begin
-			
-			for(row=0;row<4;row=row+1) begin
-				compact_word_in1_reg[row] = flattened_word_in1[8*row +: 8];
-			end
-			
-			for(row=0;row<4;row=row+1) begin
-				compact_word_in2_reg[row] = flattened_word_in2[8*row +: 8];
-			end
+//	module key_expansion_decr (clk, key_in, key_schedule, start_decrypting);
+//	input clk;
+//	input [0:127] key_in ;
+//	output reg [0:1407] key_schedule ;
+//	output reg start_decrypting;
+//	integer index = 0;
+//	reg [7:0] key_in_reg [0:3][0:3];
+//	reg [7:0] key_in_reg_word_0 [0:3]; reg [7:0] key_in_reg_word_1 [0:3]; reg [7:0] key_in_reg_word_2 [0:3]; reg [7:0] key_in_reg_word_3 [0:3];
+//	reg  [7:0] key_schedule_reg [0:3][0:43];
+//	reg [0:31] temp_rot_word;
+//	reg [0:31] temp_subword;
+//	reg [0:31] temp_rcon;
+//	reg [0:31] temp_after_xor_with_rcon;
+//	reg [0:31] temp1;
+//	reg [0:7] temp1_word [0:3];
+//	reg [0:31] temp2;
+//	reg [0:7] temp2_word [0:3];
+//	reg [0:31] temp3;
+//	reg [7:0] temp3_word [0:3];
+//	reg [7:0] inv_sbox [0:255];
+//	reg [7:0] sbox [0:255];
+//	reg [0:31] rcon [0:9];
+//	integer row, col;
+//	
+//	integer i;
+//	integer j;
+//	
+//	initial begin
+//		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/inv_sbox.mem",inv_sbox);
+//		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/rcon.mem", rcon);
+//		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/sbox.mem", sbox);
+//	end
+//	
+//	task automatic rot_word;   //////////////opeartes on a flattened word
+//	input [0:31] flattened_word_in ;
+//	output [0:31] flattened_word_out;
+//	reg [7:0] compact_word_in_reg[0:3] ;
+//	reg [7:0] compact_word_out_reg[0:3] ;
+//	integer row;
+//	
+//	
+//	begin
+//		for(row=0;row<4;row=row+1) begin
+//			compact_word_in_reg[row] = flattened_word_in[8*row +: 8];
+//		end
+//			
+//		for (row = 0; row < 4; row = row+1) begin
+//			compact_word_out_reg [row] = compact_word_in_reg [(row + 1)%4];
+//		end
+//	
+//		for(row=0;row<4;row=row+1) begin
+//			flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
+//		end
+//			end
+//	
+//	endtask
+//	
+//	task automatic sub_word;   ////////////////operates on a flattened word
+//		input [0:31] flattened_word_in ;
+//		output [0:31] flattened_word_out;
+//		reg [7:0] compact_word_in_reg[0:3] ;
+//		reg [7:0] compact_word_out_reg[0:3] ;
+//		integer row;
+//		
+//		begin
+//		
+//		
+//			for(row=0;row<4;row=row+1) begin
+//				compact_word_in_reg[row] = flattened_word_in[8*row +: 8];
+//			end
+//			
+//			for (row = 0; row < 4; row = row+1) begin
+//				compact_word_out_reg [row] = inv_sbox[16*compact_word_in_reg[row][7:4]+compact_word_in_reg[row][3:0]];
+//			end	
+//			
+//			for(row=0;row<4;row=row+1) begin
+//				flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
+//			end
+//		
+//		end
+//		endtask
+//		
+//		task automatic inv_sub_word;   ////////////////operates on a flattened word
+//		input [0:31] flattened_word_in ;
+//		output [0:31] flattened_word_out;
+//		reg [7:0] compact_word_in_reg[0:3] ;
+//		reg [7:0] compact_word_out_reg[0:3] ;
+//		integer row;
+//		
+//		begin
+//		
+//		
+//			for(row=0;row<4;row=row+1) begin
+//				compact_word_in_reg[row] = flattened_word_in[8*row +: 8];
+//			end
+//			
+//			for (row = 0; row < 4; row = row+1) begin
+//				compact_word_out_reg [row] = sbox[16*compact_word_in_reg[row][7:4]+compact_word_in_reg[row][3:0]];
+//			end	
+//			
+//			for(row=0;row<4;row=row+1) begin
+//				flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
+//			end
+//		
+//		end
+//		endtask
+//		
+//		task automatic xor_two_words;  ////////////////operates on a flattened word
+//		input [0:31] flattened_word_in1 ;
+//		input [0:31] flattened_word_in2 ;
+//		output [0:31] flattened_word_out ;
+//		reg [7:0] compact_word_in1_reg [0:3] ;
+//		reg [7:0] compact_word_in2_reg [0:3] ;
+//		reg [7:0] compact_word_out_reg [0:3];
+//		integer row;
+//		begin
+//			
+//			for(row=0;row<4;row=row+1) begin
+//				compact_word_in1_reg[row] = flattened_word_in1[8*row +: 8];
+//			end
+//			
+//			for(row=0;row<4;row=row+1) begin
+//				compact_word_in2_reg[row] = flattened_word_in2[8*row +: 8];
+//			end
+//
+//			for (row = 0; row < 4; row = row + 1) begin
+//				compact_word_out_reg[row]  = compact_word_in1_reg[row]  ^ compact_word_in2_reg[row];
+//			end
+//			
+//			for(row=0;row<4;row=row+1) begin
+//				flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
+//			end
+//			
+//		end
+//	endtask
+//		
+//		
+//		task automatic rcon_mem;  ////////////////just gives a constant from memory
+//		input [3:0] key_schedule_index ;
+//		output [0:31] word_out;
+//		begin
+//			word_out = rcon[key_schedule_index];
+//		end
+//	endtask
+//
+//
+//
+//	
+//	always @(posedge clk) begin
+//		if (index == 0) begin
+//			for(col = 0; col<4 ;col=col+1) begin
+//				for(row = 0; row<4 ;row=row+1) begin
+//					key_schedule_reg[row][col] = key_in[32*col+8*row +: 8];
+//				end
+//			end			
+//		end
+//		
+//		else if (index>3 && index<44) begin
+//			for(row = 0; row<4 ;row=row+1) begin
+//				temp1 [8*row +: 8] = key_schedule_reg[row][index-1];
+//			end
+//			
+//			for(row = 0; row<4 ;row=row+1) begin
+//				temp2 [8*row +: 8] = key_schedule_reg[row][index-4];
+//			end
+//			
+//			if (index%4 == 0) begin
+//				rot_word(temp1, temp_rot_word);
+//				inv_sub_word(temp_rot_word, temp_subword);
+//				rcon_mem(index/4, temp_rcon);
+//				xor_two_words(temp_subword, temp_rcon, temp_after_xor_with_rcon);
+//				xor_two_words(temp_after_xor_with_rcon, temp2, temp3);
+//				end
+//			else xor_two_words(temp1, temp2, temp3);
+//						
+//			for(row = 0; row<4 ;row=row+1) begin
+//				key_schedule_reg[row][index] = temp3[8*row +: 8];
+//			end
+//
+//		end
+//			if (index >= 44) begin
+//				for(col = 0; col<44 ;col=col+1) begin
+//					for(row = 0; row<4 ;row=row+1) begin
+//						key_schedule[8*row+32*col +: 8] = key_schedule_reg[row][col];
+//					end
+//				end
+//				start_decrypting = 1;
+//			end
+//			else begin
+//				start_decrypting = 0;
+//				index = index+1;
+//			end		
+//	end
+//	endmodule
+//	
 
-			for (row = 0; row < 4; row = row + 1) begin
-				compact_word_out_reg[row]  = compact_word_in1_reg[row]  ^ compact_word_in2_reg[row];
-			end
-			
-			for(row=0;row<4;row=row+1) begin
-				flattened_word_out[8*row +: 8] = compact_word_out_reg[row];
-			end
-			
-		end
-	endtask
-		
-		
-		task automatic rcon_mem;  ////////////////just gives a constant from memory
-		input [3:0] key_schedule_index ;
-		output [0:31] word_out;
-		begin
-			word_out = rcon[key_schedule_index];
-		end
-	endtask
 
-
-
-	
-	always @(posedge clk) begin
-		if (index == 0) begin
-			for(col = 0; col<4 ;col=col+1) begin
-				for(row = 0; row<4 ;row=row+1) begin
-					key_schedule_reg[row][col] = key_in[32*col+8*row +: 8];
-				end
-			end			
-		end
-		
-		else if (index>3 && index<44) begin
-			for(row = 0; row<4 ;row=row+1) begin
-				temp1 [8*row +: 8] = key_schedule_reg[row][index-1];
-			end
-			
-			for(row = 0; row<4 ;row=row+1) begin
-				temp2 [8*row +: 8] = key_schedule_reg[row][index-4];
-			end
-			
-			if (index%4 == 0) begin
-				rot_word(temp1, temp_rot_word);
-				inv_sub_word(temp_rot_word, temp_subword);
-				rcon_mem(index/4, temp_rcon);
-				xor_two_words(temp_subword, temp_rcon, temp_after_xor_with_rcon);
-				xor_two_words(temp_after_xor_with_rcon, temp2, temp3);
-				end
-			else xor_two_words(temp1, temp2, temp3);
-						
-			for(row = 0; row<4 ;row=row+1) begin
-				key_schedule_reg[row][index] = temp3[8*row +: 8];
-			end
-
-		end
-			if (index >= 44) begin
-				for(col = 0; col<44 ;col=col+1) begin
-					for(row = 0; row<4 ;row=row+1) begin
-						key_schedule[8*row+32*col +: 8] = key_schedule_reg[row][col];
-					end
-				end
-				start_decrypting = 1;
-			end
-		index = index+1;
-		
-	end
-	endmodule
-	
-
-
-module decryption(clk, start_decrypting, key_in, data_in, decipher_out, decryption_done);
+module decryption(clk, start_decrypting, key_schedule, data_in, decipher_out, decryption_done);
 input clk;
 input start_decrypting;
-input [0:127] key_in;
+input [0:1407] key_schedule;
 input [0:127] data_in;
 output reg [0:127] decipher_out;
 output reg decryption_done;
 reg [0:127] temp1, temp2, temp3, temp4, temp5;
 reg [7:0] inv_sbox [0:255];
 reg [7:0] sbox [0:255];
-reg [0:31] rcon [1:10];
+reg [0:31] rcon [0:9];
 integer round = 0;
-wire [0:1407] key_schedule;
 integer x = 0;
 	
 	
@@ -747,7 +750,7 @@ integer x = 0;
 		input [3:0] key_schedule_index ;
 		output [0:31] word_out;
 		begin
-			word_out = rcon[key_schedule_index];
+			word_out = rcon[key_schedule_index-1];
 		end
 	endtask
 	
@@ -784,15 +787,15 @@ integer x = 0;
 		end
 		
 	
-		for(col=0;col<4;col=col+1) begin
-			for (row=0;row<4;row=row+1) 
-				$display ("%d   %d   %h ",col, row, words_in[row][col] );
-		end
-		
-		for(col=0;col<4;col=col+1) begin
-			for (row=0;row<4;row=row+1) 
-				$display ("%d   %d   %h ",col, row, words_out[row][col] );
-		end
+//		for(col=0;col<4;col=col+1) begin
+//			for (row=0;row<4;row=row+1) 
+//				$display ("%d   %d   %h ",col, row, words_in[row][col] );
+//		end
+//		
+//		for(col=0;col<4;col=col+1) begin
+//			for (row=0;row<4;row=row+1) 
+//				$display ("%d   %d   %h ",col, row, words_out[row][col] );
+//		end
 		
 		for(col=0;col<4;col=col+1) begin
 			for (row=0;row<4;row=row+1)
@@ -842,7 +845,7 @@ integer x = 0;
 					   
 					   
 		
-		for(col=0;col<16;col=col+1) begin
+		for(col=0;col<4;col=col+1) begin
 			out[8*col +: 8] = bytes_out[col];
 		end
 	end	
@@ -887,7 +890,7 @@ integer x = 0;
 	endtask
 		
 		
-	key_expansion_decr k1 (clk, key_in, key_schedule, start_decrypting);
+	//key_expansion_decr k1 (clk, key_in, key_schedule, start_decrypting);
 	
 	always@(posedge clk) begin
 		if(start_decrypting == 1 && decryption_done == 0) begin
@@ -916,47 +919,71 @@ integer x = 0;
 	
 	initial begin
 		decryption_done = 0;
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/inv_sbox.mem",inv_sbox);
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/rcon.mem", rcon);
-		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/sbox.mem", sbox);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/inv_sbox.mem",inv_sbox);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/rcon.mem", rcon);
+		$readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/aes_mem_quartus/sbox.mem", sbox);
 	end	
 endmodule
 
 	
+module top_level(clk, key_in, data_in_encr, decipher_out, check);
+input clk;
+input [0:127] key_in, data_in_encr;
+output [0:127] decipher_out;
+output reg check;
 
-
-
-module top_level_tb();
-reg clk, start_encrypting, start_decrypting;
-reg [0:127] key_in, data_in_encr;
-wire [0:127] cipher_out, decipher_out;
+wire start_encrypting;
+reg start_decrypting;
+wire [0:127] cipher_out;
+wire [0:1407] key_schedule_encr, key_schedule_decr;
 wire encryption_done, decryption_done;
 
-encryption e0 (clk, start_encrypting, key_in, data_in_encr, cipher_out, encryption_done);
-decryption d0 (clk, start_decrypting, key_in, cipher_out, decipher_out, decryption_done);
+encryption e0 (clk, start_encrypting, key_schedule_encr, data_in_encr, cipher_out, encryption_done);
+decryption d0 (clk, start_decrypting, key_schedule_encr, cipher_out, decipher_out, decryption_done);
+key_expansion_encr k1 (clk, key_in, key_schedule_encr, start_encrypting);
+//key_expansion_decr k2 (clk, key_in, key_schedule_decr, start_decrypting);
 
-	initial begin
-	
-		clk = 0;
-		repeat(1000) #100 clk=~clk;
-		#200000 $stop;
+	always@(*) begin
+		if (data_in_encr == decipher_out) check = 1;
+		else check = 0;
+		if(encryption_done == 1) start_decrypting = 1;
+		else start_decrypting = 0;
 	end
-	
-	initial begin
-		key_in = 128'h 2b7e151628aed2a6abf7158809cf4f3c;
-		data_in_encr = 128'h3243f6a8885a308d313198a2e0370734;
-		// $readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/inv_sbox.mem",inv_sbox);
-		// $readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/sbox.mem",sbox);
-		// $readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/rcon.mem", rcon);
-		start_encrypting = 1;
-		
-	end
-	
-	always @ (encryption_done) begin
-		if (encryption_done == 1) begin
-			start_encrypting = 0;
-			start_decrypting = 1; 
-		end
-	end 
 
 endmodule
+
+
+//module top_level_tb();
+//reg clk;
+//reg [0:127] key_in, data_in_encr;
+//wire check;
+//
+//top_level t0 (clk, key_in, data_in_encr, check);
+//
+//
+//
+//	initial begin
+//	
+//		clk = 0;
+//		repeat(1000) #100 clk=~clk;
+//		#200000 $stop;
+//	end
+//	
+//	initial begin
+//		key_in = 128'h 2b7e151628aed2a6abf7158809cf4f3c;
+//		data_in_encr = 128'h3243f6a8885a308d313198a2e0370734;
+//		// $readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/inv_sbox.mem",inv_sbox);
+//		// $readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/sbox.mem",sbox);
+//		// $readmemh("C:/Users/Maaz/Desktop/iitb/2nd_sem/705/project/AES_PROJ_ENCR_DECR_SINGLE_BLOCK/rcon.mem", rcon);
+//		//start_encrypting = 1;
+//		
+//	end
+//	
+////	always @ (encryption_done) begin
+////		if (encryption_done == 1) begin
+////			start_encrypting = 0;
+////			start_decrypting = 1; 
+////		end
+////	end 
+//
+//endmodule
