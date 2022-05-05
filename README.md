@@ -38,3 +38,7 @@ decr file made by tanmay and uplooaded by naef
 update 04/05.2022
 files uploaded on this date are ready for encryption and decryption of a single 16B block along with the testbench
 just need to change path of memory files in main code
+
+
+update 05/05/2022
+files uploaded on this day at 09:41 pm are the final files for this project, performed STA, qflow, RTL simulation , displayed RTL netlist viewer
